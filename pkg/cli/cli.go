@@ -9,6 +9,7 @@ import (
 type App struct {
 	cmd *cobra.Command
 	subApp *App
+	isRootApp bool
 }
 
 func New(initConfig func()) *App {
@@ -16,7 +17,7 @@ func New(initConfig func()) *App {
 		cobra.OnInitialize(initConfig)
 	}
 
-	return &App{cmd: &cobra.Command{}}
+	return &App{cmd: &cobra.Command{}, isRootApp: true}
 }
 
 func (a *App) AddCommand(cmdString string, run CommandRunFunc, meta Meta, initFunc Init) *App {
@@ -42,7 +43,7 @@ func (a *App) AddCommand(cmdString string, run CommandRunFunc, meta Meta, initFu
 
 func (a *App) ApplyPreRun(options ...Option) *App {
 	cmd := a.cmd
-	if len(cmd.Use) == 0 {
+	if a.isRootApp {
 		cmd = a.subApp.cmd
 	}
 
@@ -59,7 +60,7 @@ func (a *App) ApplyPreRun(options ...Option) *App {
 
 func (a *App) ApplyPostRun(options ...Option) *App {
 	cmd := a.cmd
-	if len(cmd.Use) == 0 {
+	if a.isRootApp {
 		cmd = a.subApp.cmd
 	}
 
@@ -76,7 +77,7 @@ func (a *App) ApplyPostRun(options ...Option) *App {
 
 func (a *App) ApplyPreRunE(options ...OptionE) *App {
 	cmd := a.cmd
-	if len(cmd.Use) == 0 {
+	if a.isRootApp {
 		cmd = a.subApp.cmd
 	}
 
@@ -93,7 +94,7 @@ func (a *App) ApplyPreRunE(options ...OptionE) *App {
 
 func (a *App) ApplyPostRunE(options ...OptionE) *App {
 	cmd := a.cmd
-	if len(cmd.Use) == 0 {
+	if a.isRootApp {
 		cmd = a.subApp.cmd
 	}
 
