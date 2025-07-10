@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 type App struct {
@@ -18,7 +19,8 @@ func New(initConfig func()) *App {
 		cobra.OnInitialize(initConfig)
 	}
 
-	ctx := &Context{}
+	logger, _ := zap.NewDevelopment()
+	ctx := &Context{Logger: logger}
 
 	return &App{ctx: ctx, cmd: &cobra.Command{}, isRootApp: true}
 }

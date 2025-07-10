@@ -2,9 +2,9 @@ package cli
 
 import (
 	"context"
-	"log"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 type (
@@ -27,5 +27,5 @@ type Meta struct {
 
 type Context struct {
 	ctx context.Context
-	Logger log.Logger
+	Logger *zap.Logger
 }
