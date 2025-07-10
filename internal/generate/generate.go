@@ -9,22 +9,13 @@ import (
 
 var CmdGenerate *cobra.Command
 
-func init() {
-	CmdGenerate = &cobra.Command{
-		Use: "generate",
-		Short: "Generate random passwords",
-		Long: `Generate random passwords with customizable options.
-			For example:
-			dcxcli generate -l 12 -d -s`,
-		Run: generatePassword,
-	}
-
-	CmdGenerate.Flags().IntP("length", "l", 8, "Length of the generated Password")
-	CmdGenerate.Flags().BoolP("digits", "d", false, "Include digits in the generated password")
-	CmdGenerate.Flags().BoolP("special-chars", "s", false, "Include special chars in generated password")
+func Init(cmdGenerate *cobra.Command) {
+	cmdGenerate.Flags().IntP("length", "l", 8, "Length of the generated Password")
+	cmdGenerate.Flags().BoolP("digits", "d", false, "Include digits in the generated password")
+	cmdGenerate.Flags().BoolP("special-chars", "s", false, "Include special chars in generated password")
 }
 
-func generatePassword(cmd *cobra.Command, args []string) {
+func GeneratePassword(cmd *cobra.Command, args []string) {
 	fmt.Println("Generating Password")
 
 	length, _ := cmd.Flags().GetInt("length")

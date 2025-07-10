@@ -13,10 +13,10 @@ func init() {
 		Use: "tgscip",
 		Short: "Sample Help",
 		Long: "Sample Long Help",
-		Run: doSomething,
+		Run: DoSomething,
 	}
 }
 
-func doSomething(cmd *cobra.Command, args []string) {
+func DoSomething(cmd *cobra.Command, args []string) {
 	fmt.Println("Hey there!, you are at TGSCIP")
 }
