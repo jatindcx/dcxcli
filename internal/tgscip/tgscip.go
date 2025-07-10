@@ -4,19 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"dcxcli/pkg/cli"
 )
 
-var CmdTgscip *cobra.Command
-
-func init() {
-	CmdTgscip = &cobra.Command{
-		Use: "tgscip",
-		Short: "Sample Help",
-		Long: "Sample Long Help",
-		Run: DoSomething,
-	}
-}
-
-func DoSomething(cmd *cobra.Command, args []string) {
+func DoSomething(ctx *cli.Context, cmd *cobra.Command, args []string) {
 	fmt.Println("Hey there!, you are at TGSCIP")
 }

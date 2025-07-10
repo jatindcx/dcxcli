@@ -7,6 +7,7 @@ import (
 )
 
 type App struct {
+	ctx *Context
 	cmd *cobra.Command
 	subApp *App
 	isRootApp bool
@@ -17,15 +18,19 @@ func New(initConfig func()) *App {
 		cobra.OnInitialize(initConfig)
 	}
 
-	return &App{cmd: &cobra.Command{}, isRootApp: true}
+	ctx := &Context{}
+
+	return &App{ctx: ctx, cmd: &cobra.Command{}, isRootApp: true}
 }
 
-func (a *App) AddCommand(cmdString string, run CommandRunFunc, meta Meta, initFunc Init) *App {
+func (a *App) AddCommand(cmdString string, run CommandRunFuncWithCtx, meta Meta, initFunc Init) *App {
 	cmdString = strings.TrimSpace(cmdString)
 	
 	subCmd := &cobra.Command{
 		Use: cmdString,
-		Run: run,
+		Run: func(cmd *cobra.Command, args []string) {
+			run(a.ctx, cmd, args)
+		},
 	}
 
 	subCmd.Short = meta.Short
@@ -36,7 +41,8 @@ func (a *App) AddCommand(cmdString string, run CommandRunFunc, meta Meta, initFu
 	}
 	
 	a.cmd.AddCommand(subCmd)
-	a.subApp = &App{cmd: subCmd}
+
+	a.subApp = &App{ctx: a.ctx, cmd: subCmd}
 
 	return a.subApp
 }

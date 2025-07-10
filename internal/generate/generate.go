@@ -5,6 +5,8 @@ import (
 	"math/rand"
 
 	"github.com/spf13/cobra"
+
+	"dcxcli/pkg/cli"
 )
 
 var CmdGenerate *cobra.Command
@@ -15,7 +17,7 @@ func Init(cmdGenerate *cobra.Command) {
 	cmdGenerate.Flags().BoolP("special-chars", "s", false, "Include special chars in generated password")
 }
 
-func GeneratePassword(cmd *cobra.Command, args []string) {
+func GeneratePassword(ctx *cli.Context, cmd *cobra.Command, args []string) {
 	fmt.Println("Generating Password")
 
 	length, _ := cmd.Flags().GetInt("length")
