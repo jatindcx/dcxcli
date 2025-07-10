@@ -9,8 +9,6 @@ import (
 	"dcxcli/pkg/cli"
 )
 
-var CmdGenerate *cobra.Command
-
 func Init(cmdGenerate *cobra.Command) {
 	cmdGenerate.Flags().IntP("length", "l", 8, "Length of the generated Password")
 	cmdGenerate.Flags().BoolP("digits", "d", false, "Include digits in the generated password")
