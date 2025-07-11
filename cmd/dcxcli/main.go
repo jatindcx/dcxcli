@@ -16,6 +16,7 @@ func main() {
 	// AddCommand needs, use, run, Meta(Short and Long), Init(for initializing flags)
 	app.AddCommand("tgscip", tgscip.DoSomething, cli.Meta{}, nil).AddCommand("generate", generate.GeneratePassword, cli.Meta{}, generate.Init)
 	app.ApplyPreRun(preRun.SamplePreRun)
+	app.ApplyPostRun(preRun.SamplePreRun)
 
 	if err := app.Execute(); err != nil {
 		fmt.Println(err)

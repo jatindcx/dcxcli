@@ -8,8 +8,8 @@ import (
 	"dcxcli/pkg/cli"
 )
 
-func SamplePreRun(next cli.CommandRunFunc) cli.CommandRunFunc {
-	return func(cmd *cobra.Command, args []string) {
+func SamplePreRun(next cli.CommandRunFunc) cli.CommandRunFuncWithCtx {
+	return func(ctx *cli.Context, cmd *cobra.Command, args []string) {
 		fmt.Println("SamplePreRun: ", args)
 
 		if next != nil {

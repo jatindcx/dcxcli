@@ -8,24 +8,27 @@ import (
 )
 
 type (
-	CommandRunFunc func(*cobra.Command, []string)
+	CommandRunFunc  func(*cobra.Command, []string)
 	CommandRunEFunc func(*cobra.Command, []string) error
 
-	CommandRunFuncWithCtx func(*Context, *cobra.Command, []string)
+	CommandRunFuncWithCtx  func(*Context, *cobra.Command, []string)
 	CommandRunEFuncWithCtx func(*Context, *cobra.Command, []string) error
 
-	Option func(CommandRunFunc) CommandRunFunc
+	Option  func(CommandRunFunc) CommandRunFunc
 	OptionE func(CommandRunEFunc) CommandRunEFunc
+
+	OptionWithCtx  func(CommandRunFunc) CommandRunFuncWithCtx
+	OptionEWithCtx func(CommandRunEFunc) CommandRunEFuncWithCtx
 
 	Init func(*cobra.Command)
 )
 
 type Meta struct {
 	Short string
-	Long string
+	Long  string
 }
 
 type Context struct {
-	ctx context.Context
+	ctx    context.Context
 	Logger *zap.Logger
 }
