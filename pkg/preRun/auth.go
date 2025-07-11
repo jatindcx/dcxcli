@@ -1,16 +1,14 @@
 package preRun
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"dcxcli/pkg/types"
 )
 
-func SamplePreRun(next types.CommandRunFunc) types.CommandRunFuncWithCtx {
+func Auth(next types.CommandRunFunc) types.CommandRunFuncWithCtx {
 	return func(ctx *types.Context, cmd *cobra.Command, args []string) {
-		fmt.Println("SamplePreRun: ", args)
+		ctx.Logger.Info("Auth PreRun")
 
 		if next != nil {
 			next(cmd, args)

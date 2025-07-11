@@ -1,14 +1,18 @@
 package cli
 
 import (
+	"context"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"dcxcli/pkg/preRun"
+	"dcxcli/pkg/types"
 )
 
 type App struct {
-	ctx       *Context
+	ctx       *types.Context
 	cmd       *cobra.Command
 	subApp    *App
 	isRootApp bool
@@ -20,18 +24,21 @@ func New(initConfig func()) *App {
 	}
 
 	logger, _ := zap.NewDevelopment()
-	ctx := &Context{Logger: logger}
+	ctx := &types.Context{Logger: logger}
 
 	return &App{ctx: ctx, cmd: &cobra.Command{}, isRootApp: true}
 }
 
-func (a *App) AddCommand(cmdString string, run CommandRunFuncWithCtx, meta Meta, initFunc Init) *App {
+func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta types.Meta, initFunc types.Init) *App {
 	cmdString = strings.TrimSpace(cmdString)
 
 	subCmd := &cobra.Command{
 		Use: cmdString,
 		Run: func(cmd *cobra.Command, args []string) {
-			run(a.ctx, cmd, args)
+			ctx := a.ctx
+			ctx.Ctx = context.Background()
+
+			run(ctx, cmd, args)
 		},
 	}
 
@@ -46,10 +53,12 @@ func (a *App) AddCommand(cmdString string, run CommandRunFuncWithCtx, meta Meta,
 
 	a.subApp = &App{ctx: a.ctx, cmd: subCmd}
 
+	a.subApp.ApplyPreRun(preRun.Auth)
+
 	return a.subApp
 }
 
-func (a *App) ApplyPreRun(options ...OptionWithCtx) *App {
+func (a *App) ApplyPreRun(options ...types.OptionWithCtx) *App {
 	cmd := a.cmd
 	if a.isRootApp {
 		cmd = a.subApp.cmd
@@ -60,7 +69,10 @@ func (a *App) ApplyPreRun(options ...OptionWithCtx) *App {
 	for _, option := range options {
 		tempPreRun := currentPreRun
 		currentPreRun = func(cmd *cobra.Command, args []string) {
-			option(tempPreRun)(a.ctx, cmd, args)
+			ctx := a.ctx
+			ctx.Ctx = context.Background()
+
+			option(tempPreRun)(ctx, cmd, args)
 		}
 	}
 
@@ -69,7 +81,7 @@ func (a *App) ApplyPreRun(options ...OptionWithCtx) *App {
 	return a
 }
 
-func (a *App) ApplyPostRun(options ...OptionWithCtx) *App {
+func (a *App) ApplyPostRun(options ...types.OptionWithCtx) *App {
 	cmd := a.cmd
 	if a.isRootApp {
 		cmd = a.subApp.cmd
@@ -80,7 +92,10 @@ func (a *App) ApplyPostRun(options ...OptionWithCtx) *App {
 	for _, option := range options {
 		tempPostRun := currentPostRun
 		currentPostRun = func(cmd *cobra.Command, args []string) {
-			option(tempPostRun)(a.ctx, cmd, args)
+			ctx := a.ctx
+			ctx.Ctx = context.Background()
+
+			option(tempPostRun)(ctx, cmd, args)
 		}
 	}
 
@@ -89,7 +104,7 @@ func (a *App) ApplyPostRun(options ...OptionWithCtx) *App {
 	return a
 }
 
-func (a *App) ApplyPreRunE(options ...OptionEWithCtx) *App {
+func (a *App) ApplyPreRunE(options ...types.OptionEWithCtx) *App {
 	cmd := a.cmd
 	if a.isRootApp {
 		cmd = a.subApp.cmd
@@ -100,7 +115,10 @@ func (a *App) ApplyPreRunE(options ...OptionEWithCtx) *App {
 	for _, option := range options {
 		tempPreRunE := currentPreRunE
 		currentPreRunE = func(cmd *cobra.Command, args []string) error {
-			return option(tempPreRunE)(a.ctx, cmd, args)
+			ctx := a.ctx
+			ctx.Ctx = context.Background()
+
+			return option(tempPreRunE)(ctx, cmd, args)
 		}
 	}
 
@@ -109,7 +127,7 @@ func (a *App) ApplyPreRunE(options ...OptionEWithCtx) *App {
 	return a
 }
 
-func (a *App) ApplyPostRunE(options ...OptionEWithCtx) *App {
+func (a *App) ApplyPostRunE(options ...types.OptionEWithCtx) *App {
 	cmd := a.cmd
 	if a.isRootApp {
 		cmd = a.subApp.cmd
@@ -120,7 +138,10 @@ func (a *App) ApplyPostRunE(options ...OptionEWithCtx) *App {
 	for _, option := range options {
 		tempPostRunE := currentPostRunE
 		currentPostRunE = func(cmd *cobra.Command, args []string) error {
-			return option(tempPostRunE)(a.ctx, cmd, args)
+			ctx := a.ctx
+			ctx.Ctx = context.Background()
+
+			return option(tempPostRunE)(ctx, cmd, args)
 		}
 	}
 

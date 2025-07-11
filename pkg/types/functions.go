@@ -1,11 +1,6 @@
-package cli
+package types
 
-import (
-	"context"
-
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-)
+import "github.com/spf13/cobra"
 
 type (
 	CommandRunFunc  func(*cobra.Command, []string)
@@ -22,13 +17,3 @@ type (
 
 	Init func(*cobra.Command)
 )
-
-type Meta struct {
-	Short string
-	Long  string
-}
-
-type Context struct {
-	ctx    context.Context
-	Logger *zap.Logger
-}

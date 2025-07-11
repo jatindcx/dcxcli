@@ -7,6 +7,7 @@ import (
 	"dcxcli/internal/tgscip"
 	"dcxcli/pkg/cli"
 	"dcxcli/pkg/preRun"
+	"dcxcli/pkg/types"
 )
 
 func main() {
@@ -14,9 +15,8 @@ func main() {
 
 	// adding nested command, e.g. dcxcli tgscip generate
 	// AddCommand needs, use, run, Meta(Short and Long), Init(for initializing flags)
-	app.AddCommand("tgscip", tgscip.DoSomething, cli.Meta{}, nil).AddCommand("generate", generate.GeneratePassword, cli.Meta{}, generate.Init)
+	app.AddCommand("tgscip", tgscip.DoSomething, types.Meta{}, nil).AddCommand("generate", generate.GeneratePassword, types.Meta{}, generate.Init)
 	app.ApplyPreRun(preRun.SamplePreRun)
-	app.ApplyPostRun(preRun.SamplePreRun)
 
 	if err := app.Execute(); err != nil {
 		fmt.Println(err)
