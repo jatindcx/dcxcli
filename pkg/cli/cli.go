@@ -42,7 +42,6 @@ func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta
 		},
 	}
 
-	subCmd.Short = meta.Short
 	subCmd.Long = meta.Long
 
 	if initFunc != nil {
@@ -59,17 +58,19 @@ func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta
 }
 
 func (a *App) ApplyPreRun(options ...types.OptionWithCtx) *App {
-	cmd := a.cmd
+	app := a
 	if a.isRootApp {
-		cmd = a.subApp.cmd
+		app = a.subApp
 	}
+
+	cmd := app.cmd
 
 	currentPreRun := cmd.PreRun
 
 	for _, option := range options {
 		tempPreRun := currentPreRun
 		currentPreRun = func(cmd *cobra.Command, args []string) {
-			ctx := a.ctx
+			ctx := app.ctx
 			ctx.Ctx = context.Background()
 
 			option(tempPreRun)(ctx, cmd, args)
@@ -82,17 +83,19 @@ func (a *App) ApplyPreRun(options ...types.OptionWithCtx) *App {
 }
 
 func (a *App) ApplyPostRun(options ...types.OptionWithCtx) *App {
-	cmd := a.cmd
+	app := a
 	if a.isRootApp {
-		cmd = a.subApp.cmd
+		app = a.subApp
 	}
+
+	cmd := app.cmd
 
 	currentPostRun := cmd.PostRun
 
 	for _, option := range options {
 		tempPostRun := currentPostRun
 		currentPostRun = func(cmd *cobra.Command, args []string) {
-			ctx := a.ctx
+			ctx := app.ctx
 			ctx.Ctx = context.Background()
 
 			option(tempPostRun)(ctx, cmd, args)
@@ -105,17 +108,19 @@ func (a *App) ApplyPostRun(options ...types.OptionWithCtx) *App {
 }
 
 func (a *App) ApplyPreRunE(options ...types.OptionEWithCtx) *App {
-	cmd := a.cmd
+	app := a
 	if a.isRootApp {
-		cmd = a.subApp.cmd
+		app = a.subApp
 	}
+
+	cmd := app.cmd
 
 	currentPreRunE := cmd.PreRunE
 
 	for _, option := range options {
 		tempPreRunE := currentPreRunE
 		currentPreRunE = func(cmd *cobra.Command, args []string) error {
-			ctx := a.ctx
+			ctx := app.ctx
 			ctx.Ctx = context.Background()
 
 			return option(tempPreRunE)(ctx, cmd, args)
@@ -128,17 +133,19 @@ func (a *App) ApplyPreRunE(options ...types.OptionEWithCtx) *App {
 }
 
 func (a *App) ApplyPostRunE(options ...types.OptionEWithCtx) *App {
-	cmd := a.cmd
+	app := a
 	if a.isRootApp {
-		cmd = a.subApp.cmd
+		app = a.subApp
 	}
+
+	cmd := app.cmd
 
 	currentPostRunE := cmd.PreRunE
 
 	for _, option := range options {
 		tempPostRunE := currentPostRunE
 		currentPostRunE = func(cmd *cobra.Command, args []string) error {
-			ctx := a.ctx
+			ctx := app.ctx
 			ctx.Ctx = context.Background()
 
 			return option(tempPostRunE)(ctx, cmd, args)
