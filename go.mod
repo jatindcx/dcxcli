@@ -3,6 +3,7 @@ module dcxcli
 go 1.24.5
 
 require (
+	github.com/jatindcx/dcxcli-mock-test v0.0.0-20250711135004-518e497d4ad2
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/zap v1.27.0
 )
