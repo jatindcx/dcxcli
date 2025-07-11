@@ -53,6 +53,7 @@ func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta
 
 	a.subApp = &App{ctx: a.ctx, cmd: subCmd}
 
+	// default perun
 	a.subApp.ApplyPreRun(preRun.Auth)
 
 	return a.subApp
