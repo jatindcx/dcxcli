@@ -3,25 +3,23 @@ package mock
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/jatindcx/dcxcli-mock-test/mock"
-	"dcxcli/pkg/types"
+	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"dcxcli/pkg/types"
 )
 
 var imageName string
 var verbose bool
 
-func DoSomething(ctx *types.Context, cmd *cobra.Command, args []string) {
-
-	imageName, _ := cmd.Flags().GetString("image")
-	verbose, _ := cmd.Flags().GetBool("verbose")
-
+// MockCommand is a mock command that executes the function from mock repo.
+func MockCommand(ctx *types.Context, _ *cobra.Command, _ []string) {
 	opts := mock.MockOptions{
 		Image:   imageName,
 		Verbose: verbose,
 	}
-	
+
 	ctx.Logger.Info("Pulling image", zap.String("image", opts.Image))
 
 	result := mock.PullImage(opts, ctx.Logger)

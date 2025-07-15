@@ -18,6 +18,7 @@ type App struct {
 	isRootApp bool
 }
 
+// New factory function to create a new App instance.
 func New(initConfig func()) *App {
 	if initConfig != nil {
 		cobra.OnInitialize(initConfig)
@@ -29,6 +30,8 @@ func New(initConfig func()) *App {
 	return &App{ctx: ctx, cmd: &cobra.Command{}, isRootApp: true}
 }
 
+// AddCommand registers a new command. Arguments required are name of command, command function, Meta (Long description of command),
+// initializer function. User can write initializer function to register flags.
 func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta types.Meta, initFunc types.Init) *App {
 	cmdString = strings.TrimSpace(cmdString)
 
@@ -57,6 +60,7 @@ func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta
 	return a.subApp
 }
 
+// ApplyPreRun adds PreRun function(s).
 func (a *App) ApplyPreRun(options ...types.OptionWithCtx) *App {
 	app := a
 	if a.isRootApp {
@@ -82,6 +86,7 @@ func (a *App) ApplyPreRun(options ...types.OptionWithCtx) *App {
 	return a
 }
 
+// ApplyPostRun add PostRun function(s).
 func (a *App) ApplyPostRun(options ...types.OptionWithCtx) *App {
 	app := a
 	if a.isRootApp {
@@ -107,6 +112,7 @@ func (a *App) ApplyPostRun(options ...types.OptionWithCtx) *App {
 	return a
 }
 
+// ApplyPreRunE adds PreRunE functions(s).
 func (a *App) ApplyPreRunE(options ...types.OptionEWithCtx) *App {
 	app := a
 	if a.isRootApp {
@@ -132,6 +138,7 @@ func (a *App) ApplyPreRunE(options ...types.OptionEWithCtx) *App {
 	return a
 }
 
+// ApplyPostRunE adds PostRunE function(s).
 func (a *App) ApplyPostRunE(options ...types.OptionEWithCtx) *App {
 	app := a
 	if a.isRootApp {
@@ -157,6 +164,7 @@ func (a *App) ApplyPostRunE(options ...types.OptionEWithCtx) *App {
 	return a
 }
 
+// Execute triggers cobra.Command.Execute().
 func (a *App) Execute() error {
 	err := a.cmd.Execute()
 	if err != nil {
