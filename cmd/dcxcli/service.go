@@ -2,6 +2,7 @@ package main
 
 import (
 	"dcxcli/internal/mock"
+	"dcxcli/internal/s3parser"
 	"dcxcli/pkg/cli"
 	"dcxcli/pkg/types"
 )
@@ -14,4 +15,6 @@ func InitService(app *cli.App) {
 		types.Meta{Long: "Simulate Docker image pull with mock"},
 		mock.Init,
 	)
+
+	app.AddCommand("parse", s3parser.S3ParserCommand, types.Meta{}, s3parser.Init)
 }
