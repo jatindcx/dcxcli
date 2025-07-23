@@ -17,6 +17,8 @@ import (
 )
 
 var (
+	logFile            string
+	vendorFile         string
 	bucketNames        string
 	objectKey          string
 	ignoreSuffixes     string
@@ -49,8 +51,10 @@ type DNSLog struct {
 
 func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&bucketNames, "buckets", "b", "", "S3 bucket name to parse")
+	cmd.Flags().StringVarP(&logFile, "logFile", "l", "", "CSV file in log")
+	cmd.Flags().StringVarP(&vendorFile, "vendorFile", "v", "", "CSV file from Krishna's vendor file")
 	cmd.Flags().StringVarP(&objectKey, "object", "o", "", "S3 object key to parse")
-	cmd.Flags().StringVarP(&ignoreSuffixes, "ignore-suffixes", "i", "", "Ignore URLS with these suffixes (comma-separated)")
+	//cmd.Flags().StringVarP(&ignoreSuffixes, "ignore-suffixes", "i", "", "Ignore URLS with these suffixes (comma-separated)")
 }
 
 func setDefaults() {
@@ -332,19 +336,19 @@ func S3Parse(ctx *types.Context, body []byte) (domains []string, err error) {
 }
 
 func ParseCommand(ctx *types.Context, _ *cobra.Command, _ []string) {
-	data1, err := os.ReadFile("/Users/jatin.salgotra/Downloads/vpc-00e7e45b7358588be_vpcdnsquerylogs_024221098369_20250723T0425Z_d1f279ce.log")
+	data1, err := os.ReadFile(logFile)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
 	}
 
-	data2, err := os.ReadFile("/Users/jatin.salgotra/Downloads/Third Party Vendor Integration URLs - DeFi.csv")
+	data2, err := os.ReadFile(vendorFile)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
 	}
 
-	file1, err := S3Parse(ctx, data1)
+	file1, err := CSVParse(ctx, data1)
 	if err != nil {
 		return
 	}
@@ -442,7 +446,7 @@ func CSVParse(ctx *types.Context, data []byte) ([]string, error) {
 
 	prodIndex := -1
 	for i, col := range headers {
-		if strings.TrimSpace(col) == "Production" {
+		if strings.TrimSpace(col) == "Production" || strings.TrimSpace(col) == "query_name" {
 			prodIndex = i
 			break
 		}
