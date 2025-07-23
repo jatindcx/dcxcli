@@ -39,7 +39,7 @@ func (a *App) AddCommand(cmdString string, run types.CommandRunFuncWithCtx, meta
 		Use: cmdString,
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := a.ctx
-			ctx.Ctx = context.Background()
+			ctx.Ctx = cmd.Context()
 
 			run(ctx, cmd, args)
 		},
