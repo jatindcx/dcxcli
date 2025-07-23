@@ -13,15 +13,13 @@ var (
 	bucketNames        string
 	objectKey          string
 	ignoreSuffixes     string
-	prefix             string
 	ignoreSuffixesList []string
-	bucketsList        []string
+	bucketsList        map[string]string
 )
 
 func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&bucketNames, "buckets", "b", "", "S3 bucket name to parse")
 	cmd.Flags().StringVarP(&objectKey, "object", "o", "", "S3 object key to parse")
-	cmd.Flags().StringVarP(&prefix, "prefix", "p", "", "S3 object key prefix")
 	cmd.Flags().StringVarP(&ignoreSuffixes, "ignore-suffixes", "i", "", "Ignore URLS with these suffixes (comma-separated)")
 }
 
@@ -46,8 +44,8 @@ func S3ParserCommand(ctx *types.Context, cmd *cobra.Command, _ []string) {
 func getData(ctx *types.Context, s3Client *s3.Client) ([]byte, error) {
 	var finalResponse []byte
 
-	for _, bucket := range bucketsList {
-		latestKey, err := getLatestObject(ctx, s3Client, bucket)
+	for bucket, prefix := range bucketsList {
+		latestKey, err := getLatestObject(ctx, s3Client, bucket, prefix)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get latest object from S3: %v", err)
 		}
