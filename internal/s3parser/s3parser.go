@@ -1,12 +1,18 @@
 package s3parser
 
 import (
+	"bufio"
+	"bytes"
 	"dcxcli/pkg/types"
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/spf13/cobra"
 	"io"
+	"net/url"
+	"os"
 	"strings"
 )
 
@@ -17,6 +23,29 @@ var (
 	ignoreSuffixesList []string
 	bucketsList        []string
 )
+
+type DNSLog struct {
+	Version        string `json:"version"`
+	AccountID      string `json:"account_id"`
+	Region         string `json:"region"`
+	VPCID          string `json:"vpc_id"`
+	QueryTimestamp string `json:"query_timestamp"`
+	QueryName      string `json:"query_name"`
+	QueryType      string `json:"query_type"`
+	QueryClass     string `json:"query_class"`
+	RCode          string `json:"rcode"`
+	Answers        []struct {
+		Rdata string `json:"Rdata"`
+		Type  string `json:"Type"`
+		Class string `json:"Class"`
+	} `json:"answers"`
+	SrcAddr   string `json:"srcaddr"`
+	SrcPort   string `json:"srcport"`
+	Transport string `json:"transport"`
+	SrcIDs    struct {
+		Instance string `json:"instance"`
+	} `json:"srcids"`
+}
 
 func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&bucketNames, "buckets", "b", "", "S3 bucket name to parse")
@@ -193,9 +222,9 @@ func setDefaults() {
 	}
 
 	ignoreSuffixesList = []string{
-		"amazonaws.com",
-		"compute.internal",
-		"cloud.rlrcp.com",
+		"amazonaws.com.",
+		"compute.internal.",
+		"cloud.rlrcp.com.",
 	}
 	if len(ignoreSuffixes) != 0 {
 		ignoreSuffixesList = append(ignoreSuffixesList, strings.Split(ignoreSuffixes, ",")...)
@@ -207,21 +236,25 @@ func setDefaults() {
 func S3ParserCommand(ctx *types.Context, cmd *cobra.Command, _ []string) {
 	setDefaults()
 
-	s3Client, err := getS3Client(ctx)
-	if err != nil {
-		ctx.Logger.Error(fmt.Sprintf("Failed to load AWS config: %v", err))
+	//s3Client, err := getS3Client(ctx)
+	//if err != nil {
+	//	ctx.Logger.Error(fmt.Sprintf("Failed to load AWS config: %v", err))
+	//
+	//	return
+	//}
 
-		return
-	}
-
-	resp, err := getObject(ctx, s3Client)
-	if err != nil {
-		ctx.Logger.Error(fmt.Sprintf("Failed to get object from S3: %v", err))
-
-		return
-	}
+	//resp, err := getObject(ctx, s3Client)
+	//if err != nil {
+	//	ctx.Logger.Error(fmt.Sprintf("Failed to get object from S3: %v", err))
+	//
+	//	return
+	//}
 
 	// Parse the response
+	//err = parse(ctx, resp)
+	//if err != nil {
+	//	ctx.Logger.Error(fmt.Sprintf("Failed to parse response: %v", err))
+	//}
 }
 
 func getObject(ctx *types.Context, s3Client *s3.Client) ([]byte, error) {
@@ -258,6 +291,212 @@ func getS3Client(ctx *types.Context) (*s3.Client, error) {
 	return s3.NewFromConfig(cfg), nil
 }
 
-func parse(ctx *types.Context, body []byte) error {
-	return nil
+func S3Parse(ctx *types.Context, body []byte) (domains []string, err error) {
+	scanner := bufio.NewScanner(bytes.NewReader(body))
+
+	var ignored []string
+	ignored = append(ignored, "cloud.rlrcp.com.")
+	ignored = append(ignored, "compute.internal.")
+	ignored = append(ignored, "amazonaws.com.")
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		var entry DNSLog
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			ctx.Logger.Warn(fmt.Sprintf("Failed to parse line: %v \n", err))
+			continue
+		}
+
+		ok := false
+		for _, suffix := range ignored {
+			if strings.HasSuffix(entry.QueryName, suffix) {
+				ok = true
+			}
+		}
+
+		if ok == false {
+			cleanDomain := strings.TrimSuffix(entry.QueryName, ".")
+			domains = append(domains, cleanDomain)
+		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		return
+	}
+
+	return domains, nil
+}
+
+func ParseCommand(ctx *types.Context, _ *cobra.Command, _ []string) {
+	data1, err := os.ReadFile("/Users/jatin.salgotra/Downloads/vpc-00e7e45b7358588be_vpcdnsquerylogs_024221098369_20250723T0425Z_d1f279ce.log")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	data2, err := os.ReadFile("/Users/jatin.salgotra/Downloads/Third Party Vendor Integration URLs - DeFi.csv")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	file1, err := S3Parse(ctx, data1)
+	if err != nil {
+		return
+	}
+
+	s3OutFile, err := os.Create("s3_imported_external_file.csv")
+	if err != nil {
+		ctx.Logger.Error(fmt.Sprintf("Error creating s3_imported_external_file.csv: %v", err))
+		return
+	}
+	defer s3OutFile.Close()
+
+	s3Writer := csv.NewWriter(s3OutFile)
+	defer s3Writer.Flush()
+
+	// Header
+	s3Writer.Write([]string{"Domain"})
+
+	// Write each domain
+	for _, domain := range file1 {
+		s3Writer.Write([]string{domain})
+	}
+
+	println("length of file1 is ", len(file1))
+
+	file2, err := CSVParse(ctx, data2)
+	if err != nil {
+		return
+	}
+	println("length of file2 is ", len(file2))
+
+	set1 := make(map[string]bool)
+	for _, domain := range file1 {
+		set1[domain] = true
+	}
+
+	set2 := make(map[string]bool)
+	for _, domain := range file2 {
+		set2[domain] = true
+	}
+
+	result := make(map[string]string)
+
+	// Mark all domains from file1
+	for domain := range set1 {
+		if set2[domain] {
+			result[domain] = "in both files"
+		} else {
+			result[domain] = "from S3 bucket"
+		}
+	}
+
+	// Add domains from file2 that weren't in file1
+	for domain := range set2 {
+		if _, exists := result[domain]; !exists {
+			result[domain] = "from Krishna's file"
+		}
+	}
+
+	// Write output CSV
+	outFile, err := os.Create("output_comparison.csv")
+	if err != nil {
+		return
+	}
+	defer outFile.Close()
+
+	writer := csv.NewWriter(outFile)
+	defer writer.Flush()
+
+	// Header
+	writer.Write([]string{"Domain", "Source"})
+
+	// Write results
+	for domain, source := range result {
+		writer.Write([]string{domain, source})
+	}
+
+	println("final length of string is ", len(result))
+
+	ctx.Logger.Info("output_comparison.csv generated.")
+}
+
+func CSVParse(ctx *types.Context, data []byte) ([]string, error) {
+	reader := csv.NewReader(bytes.NewReader(data))
+
+	headers, err := reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	ignored := []string{
+		"cloud.rlrcp.com.",
+		"compute.internal.",
+		"amazonaws.com.",
+	}
+
+	prodIndex := -1
+	for i, col := range headers {
+		if strings.TrimSpace(col) == "Production" {
+			prodIndex = i
+			break
+		}
+	}
+
+	if prodIndex == -1 {
+		return nil, fmt.Errorf("Production column not found")
+	}
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var domains []string
+	for _, row := range records {
+		if prodIndex >= len(row) {
+			continue
+		}
+
+		rawURL := strings.TrimSpace(row[prodIndex])
+		if rawURL == "" {
+			continue
+		}
+
+		// Normalize the URL
+		if !strings.HasPrefix(rawURL, "http://") &&
+			!strings.HasPrefix(rawURL, "https://") &&
+			!strings.HasPrefix(rawURL, "wss://") &&
+			!strings.HasPrefix(rawURL, "ws://") {
+			rawURL = "https://" + rawURL
+		}
+
+		parsed, err := url.Parse(rawURL)
+		if err != nil || parsed.Host == "" {
+			continue
+		}
+
+		domain := parsed.Host
+
+		// Check if domain ends with any ignored suffix
+		shouldIgnore := false
+		for _, suffix := range ignored {
+			if strings.HasSuffix(domain, suffix) {
+				shouldIgnore = true
+				break
+			}
+		}
+		if shouldIgnore {
+			continue
+		}
+
+		domains = append(domains, domain)
+	}
+
+	return domains, nil
 }
