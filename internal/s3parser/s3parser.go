@@ -24,6 +24,7 @@ var (
 	ignoreSuffixes     string
 	ignoreSuffixesList []string
 	bucketsList        []string
+	env                string
 )
 
 type DNSLog struct {
@@ -54,6 +55,7 @@ func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&logFile, "logFile", "l", "", "CSV file in log")
 	cmd.Flags().StringVarP(&vendorFile, "vendorFile", "v", "", "CSV file from Krishna's vendor file")
 	cmd.Flags().StringVarP(&objectKey, "object", "o", "", "S3 object key to parse")
+	cmd.Flags().StringVarP(&env, "env", "e", "Staging", "Environment to use (default: Staging)")
 	//cmd.Flags().StringVarP(&ignoreSuffixes, "ignore-suffixes", "i", "", "Ignore URLS with these suffixes (comma-separated)")
 }
 
@@ -446,7 +448,7 @@ func CSVParse(ctx *types.Context, data []byte) ([]string, error) {
 
 	prodIndex := -1
 	for i, col := range headers {
-		if strings.TrimSpace(col) == "Production" || strings.TrimSpace(col) == "query_name" {
+		if strings.TrimSpace(col) == env || strings.TrimSpace(col) == "query_name" {
 			prodIndex = i
 			break
 		}
