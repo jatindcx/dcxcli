@@ -1,12 +1,13 @@
 package s3parser
 
 import (
-	"dcxcli/pkg/types"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
+	"io"
+
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/spf13/cobra"
-	"io"
+
+	"dcxcli/pkg/types"
 )
 
 var (
@@ -23,7 +24,7 @@ func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&ignoreSuffixes, "ignore-suffixes", "i", "", "Ignore URLS with these suffixes (comma-separated)")
 }
 
-func S3ParserCommand(ctx *types.Context, cmd *cobra.Command, _ []string) {
+func S3ParserCommand(ctx *types.Context, _ *cobra.Command, _ []string) {
 	setDefaults()
 
 	s3Client, err := getS3Client(ctx)
@@ -33,26 +34,28 @@ func S3ParserCommand(ctx *types.Context, cmd *cobra.Command, _ []string) {
 		return
 	}
 
-	_, err = getData(ctx, s3Client)
-	if err != nil {
-		ctx.Logger.Error(fmt.Sprintf("Failed to get object from S3: %v", err))
+	for bucket, prefix := range bucketsList {
+		_, err = getData(ctx, s3Client, bucket, prefix)
+		if err != nil {
+			ctx.Logger.Error(fmt.Sprintf("Failed to get object from S3: %v", err))
 
-		return
+			return
+		}
 	}
 }
 
-func getData(ctx *types.Context, s3Client *s3.Client) ([]byte, error) {
+func getData(ctx *types.Context, s3Client *s3.Client, bucket, prefix string) ([]byte, error) {
 	var finalResponse []byte
 
-	for bucket, prefix := range bucketsList {
-		latestKey, err := getLatestObject(ctx, s3Client, bucket, prefix)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get latest object from S3: %v", err)
-		}
+	objects, err := getObjects(ctx, s3Client, bucket, prefix)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest object from S3: %v", err)
+	}
 
+	for _, object := range objects {
 		resp, err := s3Client.GetObject(ctx.Ctx, &s3.GetObjectInput{
 			Bucket: &bucket,
-			Key:    latestKey.Key,
+			Key:    object.Key,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object from S3 bucket %s with key %s: %w", bucketNames, objectKey, err)
@@ -69,15 +72,6 @@ func getData(ctx *types.Context, s3Client *s3.Client) ([]byte, error) {
 	}
 
 	return finalResponse, nil
-}
-
-func getS3Client(ctx *types.Context) (*s3.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx.Ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s3.NewFromConfig(cfg), nil
 }
 
 func parse(ctx *types.Context, body []byte) error {
